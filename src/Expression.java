@@ -14,8 +14,22 @@ import java.util.regex.*;
 public class Expression {
 	private static boolean DEBUG = true;
 
-	private static Pattern plus_minus = Pattern.compile("([\\+\\-])");
-	private static Pattern mult_div = Pattern.compile("([\\*/])");
+	/* Matches any character except operators. */
+	private static String non_op = "[^\\+\\-\\*/]";
+	
+	/* Matches any character except operators, minus '-',
+	 * which is allowed after an operation as a negative sign. */
+	private static String non_op_except_minus = "[^\\+\\*/]";
+	
+	/* Matches an addition or subtraction operator.  Requires a character
+	 * before which is not an operator.  After, requires a character which
+	 * is not an operator, except '-' is allowed as a negative sign. */
+	private static Pattern plus_minus = Pattern.compile(non_op + "+([\\+\\-])" + non_op_except_minus + "+");
+	
+	/* Matches a multiplication or division operator.  Requires a character
+	 * before which is not an operator.  After, requires a character which
+	 * is not an operator, except '-' is allowed as a negative sign. */
+	private static Pattern mult_div = Pattern.compile(non_op + "+([\\*/])" + non_op_except_minus + "+");
 	
 	public static void main(String args[]) {
 		if (args.length != 1) {
@@ -41,9 +55,10 @@ public class Expression {
 		 * function will be performed first. */
 		Matcher pm = plus_minus.matcher(expression);
 		if (pm.find()) {
-			String operation = pm.group();
-			String before = expression.substring(0, pm.start());
-			String after = expression.substring(pm.end());
+			/* Characters required before plus/minus, so operation is group 1. */
+			String operation = pm.group(1);
+			String before = expression.substring(0, pm.start(1));
+			String after = expression.substring(pm.end(1));
 			
 			if (DEBUG) {
 				System.err.printf("Found operation: '%s' '%s' '%s'\n", before, operation, after);
@@ -64,9 +79,10 @@ public class Expression {
 		
 		Matcher md = mult_div.matcher(expression);
 		if (md.find()) {
-			String operation = md.group();
-			String before = expression.substring(0, md.start());
-			String after = expression.substring(md.end());
+			/* Characters required before mult/div, so operation is group 1. */
+			String operation = md.group(1);
+			String before = expression.substring(0, md.start(1));
+			String after = expression.substring(md.end(1));
 			
 			if (DEBUG) {
 				System.out.printf("Found operation: '%s' '%s' '%s'\n", before, operation, after);
