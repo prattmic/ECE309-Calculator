@@ -16,32 +16,32 @@ interface Operator {
  * Uses BigDecimal to ensure precision.
  */
 public class Expression {
-	private static boolean DEBUG = false;
+	private static final boolean DEBUG = false;
 	
 	/* Digits on precision in division. */
 	private static int precision = 30;
 
 	/* Matches any character except operators. */
-	private static String non_op = "[^\\+\\-\\*/]";
+	private static final String non_op = "[^\\+\\-\\*/]";
 	
 	/* Matches any character except operators, minus '-',
 	 * which is allowed after an operation as a negative sign. */
-	private static String non_op_except_minus = "[^\\+\\*/]";
+	private static final String non_op_except_minus = "[^\\+\\*/]";
 	
 	/* Matches an operator.  Requires a character before which is 
 	 * not an operator.  After, requires a character which is not 
 	 * an operator, except '-' is allowed as a negative sign. */
-	private static Pattern plus = Pattern.compile(non_op + "+([\\+])" + non_op_except_minus + "+");
-	private static Pattern minus = Pattern.compile(non_op + "+([\\-])" + non_op_except_minus + "+");
-	private static Pattern divide = Pattern.compile(non_op + "+(/)" + non_op_except_minus + "+");
-	private static Pattern multiply = Pattern.compile(non_op + "+(\\*)" + non_op_except_minus + "+");
+	private static final Pattern plus = Pattern.compile(non_op + "+([\\+])" + non_op_except_minus + "+");
+	private static final Pattern minus = Pattern.compile(non_op + "+([\\-])" + non_op_except_minus + "+");
+	private static final Pattern divide = Pattern.compile(non_op + "+(/)" + non_op_except_minus + "+");
+	private static final Pattern multiply = Pattern.compile(non_op + "+(\\*)" + non_op_except_minus + "+");
 	
 	/* Operations in reverse order of operations, so highest order operation
 	 * is computed at tail of recursion.  Multiply is lower order than divide
 	 * to prevent '3/5*4' from becoming '3/(5*4)', rather than '(3/5)*4'.
 	 */
-	private static Pattern[] patterns = {plus, minus, multiply, divide};
-	private static Operator[] operators = {
+	private static final Pattern[] patterns = {plus, minus, multiply, divide};
+	private static final Operator[] operators = {
 		/* Addition */
 		new Operator() {
 			public BigDecimal operate(BigDecimal before, BigDecimal after) {
