@@ -36,6 +36,38 @@ public class Expression {
 	private static Pattern divide = Pattern.compile(non_op + "+(/)" + non_op_except_minus + "+");
 	private static Pattern multiply = Pattern.compile(non_op + "+(\\*)" + non_op_except_minus + "+");
 	
+	/* Operations in reverse order of operations, so highest order operation
+	 * is computed at tail of recursion.  Multiply is lower order than divide
+	 * to prevent '3/5*4' from becoming '3/(5*4)', rather than '(3/5)*4'.
+	 */
+	private static Pattern[] patterns = {plus, minus, multiply, divide};
+	private static Operator[] operators = {
+		/* Addition */
+		new Operator() {
+			public BigDecimal operate(BigDecimal before, BigDecimal after) {
+				return before.add(after);
+			}
+		},
+		/* Subtraction */
+		new Operator() {
+			public BigDecimal operate(BigDecimal before, BigDecimal after) {
+				return before.subtract(after);
+			}
+		},
+		/* Multiplication */
+		new Operator() {
+			public BigDecimal operate(BigDecimal before, BigDecimal after) {
+				return before.multiply(after);
+			}
+		},
+		/* Division */
+		new Operator() {
+			public BigDecimal operate(BigDecimal before, BigDecimal after) {
+				return before.divide(after, precision, BigDecimal.ROUND_HALF_UP).stripTrailingZeros();
+			}
+		},
+	};
+	
 	public static void main(String args[]) {
 		if (args.length == 1) {
 			System.out.println(simplify(args[0]));
@@ -73,6 +105,14 @@ public class Expression {
 		return true;
 	}
 	
+	/**
+	 * Recursively simplifies expression to a single value.
+	 * Checks for order of operations in reverse order, thus
+	 * ensuring that the highest order of operations are performed
+	 * at the tail.
+	 * @param expression Expression to simplify
+	 * @return Simplification
+	 */
 	public static BigDecimal simplify(String expression) {
 		if (DEBUG) {
 			System.err.println("Expression: " + expression);
@@ -86,40 +126,12 @@ public class Expression {
 		 * As this function recurses down, the highest order of operations
 		 * function will be performed first. Recursion will be called
 		 * in handle_operator. */
-		Matcher matcher = plus.matcher(expression);
-		if (matcher.find()) {
-			return handle_operator(expression, matcher, new Operator() {
-				public BigDecimal operate(BigDecimal before, BigDecimal after) {
-					return before.add(after);
-				}
-			});
-		}
-		
-		matcher = minus.matcher(expression);
-		if (matcher.find()) {
-			return handle_operator(expression, matcher, new Operator() {
-				public BigDecimal operate(BigDecimal before, BigDecimal after) {
-					return before.subtract(after);
-				}
-			});
-		}
-		
-		matcher = multiply.matcher(expression);
-		if (matcher.find()) {
-			return handle_operator(expression, matcher, new Operator() {
-				public BigDecimal operate(BigDecimal before, BigDecimal after) {
-					return before.multiply(after);
-				}
-			});
-		}
-		
-		matcher = divide.matcher(expression);
-		if (matcher.find()) {
-			return handle_operator(expression, matcher, new Operator() {
-				public BigDecimal operate(BigDecimal before, BigDecimal after) {
-					return before.divide(after, precision, BigDecimal.ROUND_HALF_UP).stripTrailingZeros();
-				}
-			});
+		Matcher matcher;
+		for (int i = 0; i < operators.length; i++) {
+			matcher = patterns[i].matcher(expression);
+			if (matcher.find()) {
+				return handle_operator(expression, matcher, operators[i]);
+			}
 		}
 		
 		/* Only reached on invalid input */
