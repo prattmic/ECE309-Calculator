@@ -12,7 +12,10 @@ import java.util.regex.*;
  * Uses BigDecimal to ensure precision.
  */
 public class Expression {
-	private static boolean DEBUG = true;
+	private static boolean DEBUG = false;
+	
+	/* Digits on precision in division. */
+	private static int precision = 30;
 
 	/* Matches any character except operators. */
 	private static String non_op = "[^\\+\\-\\*/]";
@@ -26,10 +29,15 @@ public class Expression {
 	 * is not an operator, except '-' is allowed as a negative sign. */
 	private static Pattern plus_minus = Pattern.compile(non_op + "+([\\+\\-])" + non_op_except_minus + "+");
 	
-	/* Matches a multiplication or division operator.  Requires a character
+	/* Matches a division operator.  Requires a character
 	 * before which is not an operator.  After, requires a character which
 	 * is not an operator, except '-' is allowed as a negative sign. */
-	private static Pattern mult_div = Pattern.compile(non_op + "+([\\*/])" + non_op_except_minus + "+");
+	private static Pattern div = Pattern.compile(non_op + "+(/)" + non_op_except_minus + "+");
+	
+	/* Matches a multiplication operator.  Requires a character
+	 * before which is not an operator.  After, requires a character which
+	 * is not an operator, except '-' is allowed as a negative sign. */
+	private static Pattern mult = Pattern.compile(non_op + "+(\\*)" + non_op_except_minus + "+");
 	
 	public static void main(String args[]) {
 		if (args.length == 1) {
@@ -94,6 +102,10 @@ public class Expression {
 			BigDecimal simple_before = simplify(before);
 			BigDecimal simple_after = simplify(after);
 			
+			if (DEBUG) {
+				System.err.printf("Simplified operation: '%s' '%s' '%s'\n", simple_before, operation, simple_after);
+			}
+			
 			switch (operation) {
 			case "+":
 				return simple_before.add(simple_after);
@@ -104,27 +116,55 @@ public class Expression {
 			}
 		}
 		
-		Matcher md = mult_div.matcher(expression);
-		if (md.find()) {
-			/* Characters required before mult/div, so operation is group 1. */
-			String operation = md.group(1);
-			String before = expression.substring(0, md.start(1));
-			String after = expression.substring(md.end(1));
+		Matcher m = mult.matcher(expression);
+		if (m.find()) {
+			/* Characters required before mult, so operation is group 1. */
+			String operation = m.group(1);
+			String before = expression.substring(0, m.start(1));
+			String after = expression.substring(m.end(1));
 			
 			if (DEBUG) {
-				System.out.printf("Found operation: '%s' '%s' '%s'\n", before, operation, after);
+				System.err.printf("Found operation: '%s' '%s' '%s'\n", before, operation, after);
 			}
 			
 			BigDecimal simple_before = simplify(before);
 			BigDecimal simple_after = simplify(after);
 			
-			switch (operation) {
-			case "*":
+			if (DEBUG) {
+				System.err.printf("Simplified operation: '%s' '%s' '%s'\n", simple_before, operation, simple_after);
+			}
+			
+			if (operation.equals("*")) {
 				return simple_before.multiply(simple_after);
-			case "/":
-				return simple_before.divide(simple_after);
-			default:
-				throw new NumberFormatException("Invalid multiply/divide operator " + operation + " in " + expression);
+			}
+			else {
+				throw new NumberFormatException("Invalid multiply operator " + operation + " in " + expression);
+			}
+		}
+		
+		Matcher d = div.matcher(expression);
+		if (d.find()) {
+			/* Characters required before div, so operation is group 1. */
+			String operation = d.group(1);
+			String before = expression.substring(0, d.start(1));
+			String after = expression.substring(d.end(1));
+			
+			if (DEBUG) {
+				System.err.printf("Found operation: '%s' '%s' '%s'\n", before, operation, after);
+			}
+			
+			BigDecimal simple_before = simplify(before);
+			BigDecimal simple_after = simplify(after);
+			
+			if (DEBUG) {
+				System.err.printf("Simplified operation: '%s' '%s' '%s'\n", simple_before, operation, simple_after);
+			}
+			
+			if (operation.equals("/")) {
+				return simple_before.divide(simple_after, precision, BigDecimal.ROUND_HALF_UP).stripTrailingZeros();
+			}
+			else {
+				throw new NumberFormatException("Invalid multiply operator " + operation + " in " + expression);
 			}
 		}
 		
