@@ -7,6 +7,10 @@ import java.util.regex.*;
  * David Wilson
  */
 
+interface Operator {
+	BigDecimal operate(BigDecimal operand1, BigDecimal operand2);
+}
+
 /**
  * Parses mathematical expressions.
  * Uses BigDecimal to ensure precision.
@@ -24,20 +28,13 @@ public class Expression {
 	 * which is allowed after an operation as a negative sign. */
 	private static String non_op_except_minus = "[^\\+\\*/]";
 	
-	/* Matches an addition or subtraction operator.  Requires a character
-	 * before which is not an operator.  After, requires a character which
-	 * is not an operator, except '-' is allowed as a negative sign. */
-	private static Pattern plus_minus = Pattern.compile(non_op + "+([\\+\\-])" + non_op_except_minus + "+");
-	
-	/* Matches a division operator.  Requires a character
-	 * before which is not an operator.  After, requires a character which
-	 * is not an operator, except '-' is allowed as a negative sign. */
-	private static Pattern div = Pattern.compile(non_op + "+(/)" + non_op_except_minus + "+");
-	
-	/* Matches a multiplication operator.  Requires a character
-	 * before which is not an operator.  After, requires a character which
-	 * is not an operator, except '-' is allowed as a negative sign. */
-	private static Pattern mult = Pattern.compile(non_op + "+(\\*)" + non_op_except_minus + "+");
+	/* Matches an operator.  Requires a character before which is 
+	 * not an operator.  After, requires a character which is not 
+	 * an operator, except '-' is allowed as a negative sign. */
+	private static Pattern plus = Pattern.compile(non_op + "+([\\+])" + non_op_except_minus + "+");
+	private static Pattern minus = Pattern.compile(non_op + "+([\\-])" + non_op_except_minus + "+");
+	private static Pattern divide = Pattern.compile(non_op + "+(/)" + non_op_except_minus + "+");
+	private static Pattern multiply = Pattern.compile(non_op + "+(\\*)" + non_op_except_minus + "+");
 	
 	public static void main(String args[]) {
 		if (args.length == 1) {
@@ -87,88 +84,75 @@ public class Expression {
 		
 		/* Perform simplification in reverse order of operations.
 		 * As this function recurses down, the highest order of operations
-		 * function will be performed first. */
-		Matcher pm = plus_minus.matcher(expression);
-		if (pm.find()) {
-			/* Characters required before plus/minus, so operation is group 1. */
-			String operation = pm.group(1);
-			String before = expression.substring(0, pm.start(1));
-			String after = expression.substring(pm.end(1));
-			
-			if (DEBUG) {
-				System.err.printf("Found operation: '%s' '%s' '%s'\n", before, operation, after);
-			}
-			
-			BigDecimal simple_before = simplify(before);
-			BigDecimal simple_after = simplify(after);
-			
-			if (DEBUG) {
-				System.err.printf("Simplified operation: '%s' '%s' '%s'\n", simple_before, operation, simple_after);
-			}
-			
-			switch (operation) {
-			case "+":
-				return simple_before.add(simple_after);
-			case "-":
-				return simple_before.subtract(simple_after);
-			default:
-				throw new NumberFormatException("Invalid add/substract operator " + operation + " in " + expression);
-			}
+		 * function will be performed first. Recursion will be called
+		 * in handle_operator. */
+		Matcher matcher = plus.matcher(expression);
+		if (matcher.find()) {
+			return handle_operator(expression, matcher, new Operator() {
+				public BigDecimal operate(BigDecimal before, BigDecimal after) {
+					return before.add(after);
+				}
+			});
 		}
 		
-		Matcher m = mult.matcher(expression);
-		if (m.find()) {
-			/* Characters required before mult, so operation is group 1. */
-			String operation = m.group(1);
-			String before = expression.substring(0, m.start(1));
-			String after = expression.substring(m.end(1));
-			
-			if (DEBUG) {
-				System.err.printf("Found operation: '%s' '%s' '%s'\n", before, operation, after);
-			}
-			
-			BigDecimal simple_before = simplify(before);
-			BigDecimal simple_after = simplify(after);
-			
-			if (DEBUG) {
-				System.err.printf("Simplified operation: '%s' '%s' '%s'\n", simple_before, operation, simple_after);
-			}
-			
-			if (operation.equals("*")) {
-				return simple_before.multiply(simple_after);
-			}
-			else {
-				throw new NumberFormatException("Invalid multiply operator " + operation + " in " + expression);
-			}
+		matcher = minus.matcher(expression);
+		if (matcher.find()) {
+			return handle_operator(expression, matcher, new Operator() {
+				public BigDecimal operate(BigDecimal before, BigDecimal after) {
+					return before.subtract(after);
+				}
+			});
 		}
 		
-		Matcher d = div.matcher(expression);
-		if (d.find()) {
-			/* Characters required before div, so operation is group 1. */
-			String operation = d.group(1);
-			String before = expression.substring(0, d.start(1));
-			String after = expression.substring(d.end(1));
-			
-			if (DEBUG) {
-				System.err.printf("Found operation: '%s' '%s' '%s'\n", before, operation, after);
-			}
-			
-			BigDecimal simple_before = simplify(before);
-			BigDecimal simple_after = simplify(after);
-			
-			if (DEBUG) {
-				System.err.printf("Simplified operation: '%s' '%s' '%s'\n", simple_before, operation, simple_after);
-			}
-			
-			if (operation.equals("/")) {
-				return simple_before.divide(simple_after, precision, BigDecimal.ROUND_HALF_UP).stripTrailingZeros();
-			}
-			else {
-				throw new NumberFormatException("Invalid multiply operator " + operation + " in " + expression);
-			}
+		matcher = multiply.matcher(expression);
+		if (matcher.find()) {
+			return handle_operator(expression, matcher, new Operator() {
+				public BigDecimal operate(BigDecimal before, BigDecimal after) {
+					return before.multiply(after);
+				}
+			});
+		}
+		
+		matcher = divide.matcher(expression);
+		if (matcher.find()) {
+			return handle_operator(expression, matcher, new Operator() {
+				public BigDecimal operate(BigDecimal before, BigDecimal after) {
+					return before.divide(after, precision, BigDecimal.ROUND_HALF_UP).stripTrailingZeros();
+				}
+			});
 		}
 		
 		/* Only reached on invalid input */
 		throw new NumberFormatException("No operation found in " + expression);
+	}
+
+	/**
+	 * Once a match has been found, handles simplification of operator.
+	 * Calls simplify on each side of operator to turn them into a single
+	 * number that can be operated on.
+	 * @param expression Expression being matched
+	 * @param matcher Matcher object, after .find() successful
+	 * @param operator Operator interface, implementing actual operator work.
+	 * @return Result of operator
+	 */
+	private static BigDecimal handle_operator(String expression, Matcher matcher,
+			Operator operator) {
+		/* Characters required before operator, so operation is group 1. */
+		String operation = matcher.group(1);
+		String before = expression.substring(0, matcher.start(1));
+		String after = expression.substring(matcher.end(1));
+		
+		if (DEBUG) {
+			System.err.printf("Found operation: '%s' '%s' '%s'\n", before, operation, after);
+		}
+		
+		BigDecimal simple_before = simplify(before);
+		BigDecimal simple_after = simplify(after);
+		
+		if (DEBUG) {
+			System.err.printf("Simplified operation: '%s' '%s' '%s'\n", simple_before, operation, simple_after);
+		}
+		
+		return operator.operate(simple_before, simple_after);
 	}
 }
