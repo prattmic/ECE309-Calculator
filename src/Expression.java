@@ -32,13 +32,40 @@ public class Expression {
 	private static Pattern mult_div = Pattern.compile(non_op + "+([\\*/])" + non_op_except_minus + "+");
 	
 	public static void main(String args[]) {
-		if (args.length != 1) {
-			System.err.println("Please provide test input.");
+		if (args.length == 1) {
+			System.out.println(simplify(args[0]));
 		}
 		
-		String test = args[0];
+		test("1", new BigDecimal(1));
+		test("1+1", new BigDecimal(2));
+		test("-1*1+1", new BigDecimal(0));
+		test("-1*1+1/2", new BigDecimal(-0.5));
+		test("2*2+2", new BigDecimal(6));
+		test("5/-6+3/5*4", new BigDecimal(5.0/-6+3.0/5*4));
+		test("5/-6+4*3/5", new BigDecimal(5.0/-6+3.0/5*4));
+		test("1+1+1+1+1/4", new BigDecimal(4.25));
+		test("1/4+1+1+1+1*10/5", new BigDecimal(5.25));
+	}
+	
+	private static boolean test(String expression, BigDecimal expectedValue) {
+		BigDecimal result = null;
 		
-		System.out.println(simplify(test));
+		System.out.printf("Testing '" + expression + "'\t");
+		
+		try {
+			result = simplify(expression);
+		} catch (Exception e) {
+			System.out.println("FAIL: Test raised exception " + e + "\n");
+			return false;
+		}
+		
+		if (Math.abs(result.subtract(expectedValue).doubleValue()) > 0.00001) {
+			System.out.println("FAIL: Test returned " + result + ", expected " + expectedValue + "\n");
+			return false;
+		}
+		
+		System.out.printf("PASSED\n");
+		return true;
 	}
 	
 	public static BigDecimal simplify(String expression) {
