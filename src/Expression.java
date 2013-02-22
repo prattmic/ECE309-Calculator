@@ -78,10 +78,14 @@ public class Expression {
 		test("-1*1+1", new BigDecimal(0));
 		test("-1*1+1/2", new BigDecimal(-0.5));
 		test("2*2+2", new BigDecimal(6));
-		test("5/-6+3/5*4", new BigDecimal(5.0/-6+3.0/5*4));
+		test("5/-6+3/ 5*4", new BigDecimal(5.0/-6+3.0/5*4));
 		test("5/-6+4*3/5", new BigDecimal(5.0/-6+3.0/5*4));
 		test("1+1+1+1+1/4", new BigDecimal(4.25));
-		test("1/4+1+1+1+1*10/5", new BigDecimal(5.25));
+		test("1/4+1	+1+1+1*10/5", new BigDecimal(5.25));
+		test("1+----2", new BigDecimal(3));
+		test("1+---2", new BigDecimal(-1));
+		test("- -- -2+1", new BigDecimal(3));
+		test("---2+1", new BigDecimal(-1));
 	}
 	
 	private static boolean test(String expression, BigDecimal expectedValue) {
@@ -106,6 +110,36 @@ public class Expression {
 	}
 	
 	/**
+	 * Cleans expression of problematic cases, like whitespace and double negatives.
+	 * @param expression
+	 * @return
+	 */
+	public static String cleanup(String expression) {
+		Matcher matcher;
+		
+		/* Strip all whitespace */
+		expression = expression.replaceAll("\\s", "");
+		
+		/* Matches operator or beginning of line followed by double negative. 
+		 * Group 2 is the actual double negatives. */
+		Pattern double_neg = Pattern.compile("(^|[\\+\\-\\*/])((\\-\\-)+)");
+		
+		matcher = double_neg.matcher(expression);
+		if (matcher.find()) {
+			String before = expression.substring(0, matcher.start(2));
+			String after = expression.substring(matcher.end(2));
+			
+			if (DEBUG) {
+				System.err.println("Found double negative, removing.");
+			}
+			
+			expression = before + after;
+		}
+		
+		return expression;
+	}
+	
+	/**
 	 * Recursively simplifies expression to a single value.
 	 * Checks for order of operations in reverse order, thus
 	 * ensuring that the highest order of operations are performed
@@ -117,6 +151,8 @@ public class Expression {
 		if (DEBUG) {
 			System.err.println("Expression: " + expression);
 		}
+		
+		expression = cleanup(expression);
 		
 		try {	// If expression is a valid number, simply return it.
 			return new BigDecimal(expression);
