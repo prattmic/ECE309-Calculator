@@ -71,6 +71,7 @@ public class Expression {
 	public static void main(String args[]) {
 		if (args.length == 1) {
 			System.out.println(simplify(args[0]));
+			return;
 		}
 		
 		test("1", new BigDecimal(1));
@@ -86,6 +87,11 @@ public class Expression {
 		test("1+---2", new BigDecimal(-1));
 		test("- -- -2+1", new BigDecimal(3));
 		test("---2+1", new BigDecimal(-1));
+		test("3+(4*2)", new BigDecimal(11));
+		test("(4+(4*2))/2", new BigDecimal(6));
+		test("(((4)))", new BigDecimal(4));
+		test("(0)(((4)))", new BigDecimal(0));
+		test("(4*2)/(5+5) + (4*(6+6))", new BigDecimal(48.8));
 	}
 	
 	private static boolean test(String expression, BigDecimal expectedValue) {
@@ -136,6 +142,9 @@ public class Expression {
 			expression = before + after;
 		}
 		
+		/* ')(' implies multiplication */
+		expression = expression.replaceAll("\\)\\(", ")*(");
+		
 		return expression;
 	}
 	
@@ -153,6 +162,8 @@ public class Expression {
 		}
 		
 		expression = cleanup(expression);
+		
+		expression = handle_parens(expression);
 		
 		try {	// If expression is a valid number, simply return it.
 			return new BigDecimal(expression);
@@ -172,6 +183,59 @@ public class Expression {
 		
 		/* Only reached on invalid input */
 		throw new NumberFormatException("No operation found in " + expression);
+	}
+
+	/**
+	 * Simplifies all parentheses out of expression so that simplify() only
+	 * has to deal with operators, not parentheses.  Finds first set of parentheses,
+	 * simplifies that, and recursively calls handle_parens to deal with other parens
+	 * in expression.
+	 * 
+	 * WARNING: This function has horrific runtime!  It is O(n) in the best case, and
+	 * O(n^parens) in the worst case. This needs to be improved.
+	 * @param expression
+	 * @return expression without parentheses
+	 */
+	private static String handle_parens(String expression) {
+		byte[] exp = expression.getBytes();
+		
+		int openParens = 0;
+		int closeParens = 0;
+		int firstParen = 0;
+		
+		for (int i = 0; i < expression.length(); i++) {
+			if (exp[i] == '(') {
+				if (openParens == 0) {
+					firstParen = i;
+				}
+				openParens++;
+			}
+			else if (exp[i] == ')') {
+				closeParens++;
+				if ((openParens == closeParens) && firstParen != i) {
+					if (DEBUG) {
+						System.err.println("Found paren contents: " + expression.substring(firstParen+1, i));
+					}
+					BigDecimal simple = simplify(expression.substring(firstParen+1, i));
+					if (DEBUG) {
+						System.err.println("Simplified parens contents: " + simple);
+					}
+					
+					/* Recurvisely handle other parens*/
+					String concat = expression.substring(0, firstParen) + simple + expression.substring(i+1);
+					if (DEBUG) {
+						System.err.println("Concatenated string: " + concat);
+					}
+					return handle_parens(concat);
+				}
+			}
+		}
+		
+		if (openParens != closeParens) {
+			throw new NumberFormatException("Unmatched parentheses");
+		}
+		
+		return expression;
 	}
 
 	/**
