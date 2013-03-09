@@ -180,7 +180,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 				return;
 			}
 			inputTextArea.setText("");
-			String evalAnswer = accumSum.setScale(2, BigDecimal.ROUND_HALF_UP).toString();
+			String evalAnswer = accumSum.setScale(2, BigDecimal.ROUND_HALF_UP).stripTrailingZeros().toString();
 			answerTextArea.setText("Sum: "+evalAnswer);
 			logTextArea.append(prevSum + " + "+ toEval + " = "+ evalAnswer + "\n");
 			prevSum = evalAnswer;
@@ -196,7 +196,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 				return;
 			}
 			inputTextArea.setText("");
-			String evalAnswer = accumSum.setScale(2, BigDecimal.ROUND_HALF_UP).toString();
+			String evalAnswer = accumSum.setScale(2, BigDecimal.ROUND_HALF_UP).stripTrailingZeros().toString();
 			answerTextArea.setText("Answer: "+evalAnswer);
 			logTextArea.append(toEval + " = "+ evalAnswer + "\n");
 
