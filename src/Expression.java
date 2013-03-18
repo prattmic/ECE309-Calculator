@@ -8,11 +8,11 @@ import java.util.regex.*;
  */
 
 interface Operator {
-	BigDecimal operate(BigDecimal operand1, BigDecimal operand2);
+	BigDecimal operate(BigDecimal operand1, BigDecimal operand2, char operator);
 }
 
 /**
- * Parses mathematical expressions.
+ * Parses mathematicaPart2_Calculator.html expressions.
  * Uses BigDecimal to ensure precision.
  */
 public class Expression {
@@ -30,40 +30,57 @@ public class Expression {
 	
 	/* Matches an operator.  Requires a character before which is 
 	 * not an operator.  After, requires a character which is not 
-	 * an operator, except '-' is allowed as a negative sign. */
-	private static final Pattern plus = Pattern.compile(non_op + "+([\\+])" + non_op_except_minus + "+");
-	private static final Pattern minus = Pattern.compile(non_op + "+([\\-])" + non_op_except_minus + "+");
-	private static final Pattern divide = Pattern.compile(non_op + "+(/)" + non_op_except_minus + "+");
-	private static final Pattern multiply = Pattern.compile(non_op + "+(\\*)" + non_op_except_minus + "+");
+	 * an operator, except '-' is allowed as a negative sign.
+	 * Use reluctant +? matching on non_op to match first
+	 * instance of equal operators, which will result in
+	 * right-to-left evaluation. */
+	private static final Pattern addition = Pattern.compile(non_op + "+?([\\+\\-])" + non_op_except_minus + "+");
+	private static final Pattern multiply = Pattern.compile(non_op + "+?(\\*)" + non_op_except_minus + "+");
+	private static final Pattern divide = Pattern.compile(non_op + "+?(/)" + non_op_except_minus + "+");
+	private static final Pattern power = Pattern.compile(non_op + "+?([\\^r])" + non_op_except_minus + "+");
 	
 	/* Operations in reverse order of operations, so highest order operation
 	 * is computed at tail of recursion.  Multiply is lower order than divide
 	 * to prevent '3/5*4' from becoming '3/(5*4)', rather than '(3/5)*4'.
 	 */
-	private static final Pattern[] patterns = {plus, minus, multiply, divide};
+	private static final Pattern[] patterns = {addition, multiply, divide, power};
 	private static final Operator[] operators = {
 		/* Addition */
 		new Operator() {
-			public BigDecimal operate(BigDecimal before, BigDecimal after) {
-				return before.add(after);
-			}
-		},
-		/* Subtraction */
-		new Operator() {
-			public BigDecimal operate(BigDecimal before, BigDecimal after) {
-				return before.subtract(after);
+			public BigDecimal operate(BigDecimal before, BigDecimal after, char operator) {
+				switch (operator) {
+				case '+':
+					return before.add(after);
+				case '-':
+					return before.subtract(after);
+				default:
+					throw new NumberFormatException("Invalid addition operator " + operator);
+				}
 			}
 		},
 		/* Multiplication */
 		new Operator() {
-			public BigDecimal operate(BigDecimal before, BigDecimal after) {
+			public BigDecimal operate(BigDecimal before, BigDecimal after, char operator) {
 				return before.multiply(after);
 			}
 		},
 		/* Division */
 		new Operator() {
-			public BigDecimal operate(BigDecimal before, BigDecimal after) {
+			public BigDecimal operate(BigDecimal before, BigDecimal after, char operator) {
 				return before.divide(after, precision, BigDecimal.ROUND_HALF_UP).stripTrailingZeros();
+			}
+		},
+		/* Power */
+		new Operator() {
+			public BigDecimal operate(BigDecimal before, BigDecimal after, char operator) {
+				switch (operator) {
+				case '^':
+					return power(before, after);
+				case 'r':
+					return power(before, BigDecimal.ONE.divide(after, precision, BigDecimal.ROUND_HALF_UP));
+				default:
+					throw new NumberFormatException("Invalid power operator " + operator);
+				}
 			}
 		},
 	};
@@ -92,6 +109,15 @@ public class Expression {
 		test("(((4)))", new BigDecimal(4));
 		test("(0)(((4)))", new BigDecimal(0));
 		test("(4*2)/(5+5) + (4*(6+6))", new BigDecimal(48.8));
+		test("2^4", new BigDecimal(16));
+		test("1.5^2", new BigDecimal(2.25));
+		test("2^1.5", new BigDecimal(Math.pow(2, 1.5)));
+		test("25r2", new BigDecimal(5));
+		test("2^(1+3^2)/2", new BigDecimal(Math.pow(2, 9)));
+		test("2^4r3", new BigDecimal(Math.pow(2, Math.pow(4, 1/3.0))));
+		test("2^2^3", new BigDecimal(256));
+		test("(2^2)^3", new BigDecimal(64));
+		test("256r2^3", new BigDecimal(2));
 	}
 	
 	private static boolean test(String expression, BigDecimal expectedValue) {
@@ -265,6 +291,43 @@ public class Expression {
 			System.err.printf("Simplified operation: '%s' '%s' '%s'\n", simple_before, operation, simple_after);
 		}
 		
-		return operator.operate(simple_before, simple_after);
+		return operator.operate(simple_before, simple_after, operation.charAt(0));
+	}
+	
+	/**
+	 * Computes power of BigDecimals.
+	 * Brought to you by http://stackoverflow.com/a/3590314
+	 * @param a Base
+	 * @param b Exponent
+	 * @return a^b
+	 */
+	private static BigDecimal power(BigDecimal a, BigDecimal b) {
+		BigDecimal result = null;
+	    int power_sign = b.signum();
+	    
+        // Perform X^(A+B)=X^A*X^B (B = remainder)
+        double base = a.doubleValue();
+        
+        if (a.compareTo(new BigDecimal(base)) != 0) {
+        	// Cannot convert n1 to double
+            throw new NumberFormatException("Unable to maintain precision in exponentiation");
+        }
+        
+        b = b.multiply(new BigDecimal(power_sign)); // b is now positive
+        BigDecimal power_remainder = b.remainder(BigDecimal.ONE);
+        BigDecimal power_int = b.subtract(power_remainder);
+        
+        // Calculate big part of the power using context -
+        // bigger range and performance but lower accuracy
+        BigDecimal intPow = a.pow(power_int.intValueExact());
+        BigDecimal doublePow = new BigDecimal(Math.pow(base, power_remainder.doubleValue()));
+        result = intPow.multiply(doublePow);
+
+	    // Fix negative power
+	    if (power_sign == -1) {
+	        result = BigDecimal.ONE.divide(result, precision, BigDecimal.ROUND_HALF_UP);
+	    }
+	    
+	    return result;
 	}
 }
