@@ -5,6 +5,12 @@ import javax.swing.*;
 
 import java.math.BigDecimal;
 
+/* ECE309 Calculator Project
+ * Michael Pratt
+ * Dennis Penn
+ * David Wilson
+ */
+
 @SuppressWarnings("serial")
 public class Accumulator extends JApplet implements ActionListener, KeyListener ,Runnable{
 	private static final double comparisonPrecision = 0.01;
@@ -106,6 +112,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		System.out.println("ECE309 Calculator Project\nTeam 9\nMichael Pratt\nDennis Penn\nDavid Wilson");
 		new Accumulator();
 	}
 
