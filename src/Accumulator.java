@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 
 @SuppressWarnings("serial")
 public class Accumulator extends JApplet implements ActionListener, KeyListener ,Runnable{
+	private static final double comparisonPrecision = 0.01;
 	private JFrame	window     = new JFrame("ECE309 Calculator - Accumulator Mode");
 	private JPanel	northPanel	= new JPanel();
 	private JPanel	centerPanel	= new JPanel();
@@ -216,7 +217,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 			String left =((String) toEval).substring(0,equalOffset).trim();
 			String right = ((String) toEval).substring(equalOffset+1).trim();
 			try{
-				if(Expression.simplify(left).equals(Expression.simplify(right))){
+				if(Math.abs(Expression.simplify(left).subtract(Expression.simplify(right)).doubleValue()) < comparisonPrecision){
 					answerTextArea.setText(left+ " = " + right + ": Correct!");
 					logTextArea.append(left+ " = " + right + ": Correct!"+"\n");
 				}
