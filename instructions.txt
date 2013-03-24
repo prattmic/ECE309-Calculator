@@ -1,0 +1,9 @@
+This project consists of two classes Expression and Accumulator.  The Expression class implements the actual expression parsing, while the Accumulator class implements the GUI and accumulator/calculator functionality, using the Expression class as the back end.
+
+Both classes must be built in order to run the project.  You simply need to run the Accumulator class.  Running the Expression class will simply run through a set of test cases.
+
+ECE 309 Calculator Part 1
+Team 9
+Michael Pratt
+Dennis Penn
+David Wilson
