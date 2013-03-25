@@ -314,7 +314,7 @@ public class Expression {
         
         if (a.compareTo(new BigDecimal(base)) != 0) {
         	// Cannot convert n1 to double
-            throw new NumberFormatException("Unable to maintain precision in exponentiation");
+            System.err.println("Warning: Unable to maintain precision in exponentiation");
         }
         
         b = b.multiply(new BigDecimal(power_sign)); // b is now positive
