@@ -34,7 +34,8 @@ public class Expression {
 	 * Use reluctant +? matching on non_op to match first
 	 * instance of equal operators, which will result in
 	 * right-to-left evaluation. */
-	private static final Pattern addition = Pattern.compile(non_op + "+?([\\+\\-])" + non_op_except_minus + "+");
+	private static final Pattern addition = Pattern.compile(non_op + "+?([\\+])" + non_op_except_minus + "+");
+	private static final Pattern subtraction = Pattern.compile(non_op + "+?([\\-])" + non_op_except_minus + "+");
 	private static final Pattern multiply = Pattern.compile(non_op + "+?(\\*)" + non_op_except_minus + "+");
 	private static final Pattern divide = Pattern.compile(non_op + "+?(/)" + non_op_except_minus + "+");
 	private static final Pattern power = Pattern.compile(non_op + "+?([\\^r])" + non_op_except_minus + "+");
@@ -43,19 +44,18 @@ public class Expression {
 	 * is computed at tail of recursion.  Multiply is lower order than divide
 	 * to prevent '3/5*4' from becoming '3/(5*4)', rather than '(3/5)*4'.
 	 */
-	private static final Pattern[] patterns = {addition, multiply, divide, power};
+	private static final Pattern[] patterns = {addition, subtraction, multiply, divide, power};
 	private static final Operator[] operators = {
 		/* Addition */
 		new Operator() {
 			public BigDecimal operate(BigDecimal before, BigDecimal after, char operator) {
-				switch (operator) {
-				case '+':
-					return before.add(after);
-				case '-':
-					return before.subtract(after);
-				default:
-					throw new NumberFormatException("Invalid addition operator " + operator);
-				}
+				return before.add(after);
+			}
+		},
+		/* Subtraction */
+		new Operator() {
+			public BigDecimal operate(BigDecimal before, BigDecimal after, char operator) {
+				return before.subtract(after);
 			}
 		},
 		/* Multiplication */
@@ -93,9 +93,12 @@ public class Expression {
 		
 		test("1", new BigDecimal(1));
 		test("1+1", new BigDecimal(2));
+		test("1-1+1", new BigDecimal(1));
+		test("(2-1)*2", new BigDecimal(2));
 		test("-1*1+1", new BigDecimal(0));
 		test("-1*1+1/2", new BigDecimal(-0.5));
 		test("2*2+2", new BigDecimal(6));
+		test("1+2-3/4+5", new BigDecimal(7.25));
 		test("5/-6+3/ 5*4", new BigDecimal(5.0/-6+3.0/5*4));
 		test("5/-6+4*3/5", new BigDecimal(5.0/-6+3.0/5*4));
 		test("1+1+1+1+1/4", new BigDecimal(4.25));
