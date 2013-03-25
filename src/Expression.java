@@ -38,7 +38,7 @@ public class Expression {
 	private static final Pattern subtraction = Pattern.compile(non_op + "+?([\\-])" + non_op_except_minus + "+");
 	private static final Pattern multiply = Pattern.compile(non_op + "+?(\\*)" + non_op_except_minus + "+");
 	private static final Pattern divide = Pattern.compile(non_op + "+?(/)" + non_op_except_minus + "+");
-	private static final Pattern power = Pattern.compile(non_op + "+?([\\^r])" + non_op_except_minus + "+");
+	private static final Pattern power = Pattern.compile(non_op + "+?([\\^rR])" + non_op_except_minus + "+");
 	
 	/* Operations in reverse order of operations, so highest order operation
 	 * is computed at tail of recursion.  Multiply is lower order than divide
@@ -77,6 +77,7 @@ public class Expression {
 				case '^':
 					return power(before, after);
 				case 'r':
+				case 'R':
 					return power(before, BigDecimal.ONE.divide(after, precision, BigDecimal.ROUND_HALF_UP));
 				default:
 					throw new NumberFormatException("Invalid power operator " + operator);
