@@ -122,15 +122,24 @@ public class Expression {
 		test("2^2^3", new BigDecimal(256));
 		test("(2^2)^3", new BigDecimal(64));
 		test("256r2^3", new BigDecimal(2));
+		test("pI*E", new BigDecimal(Math.PI*Math.E));
+		test("--pI*--E + ---1", new BigDecimal(Math.PI*Math.E-1));
+		test("x+1", "1", new BigDecimal(2));
+		test("9*3*3/(3*3)/(3*3)", new BigDecimal(81));
+		test("((2*pi)^(x+1))", "e", new BigDecimal(928.6620542692));
+		test("5^xR2*20", "e", new BigDecimal(20*14.203870815498223));
+		test("1+2-3/4", new BigDecimal(2.25));
+		test("1+2-3/4+5^xR2", "e", new BigDecimal(16.453870815));
+		test("((3*2)^(3-1))/((4^2)*(4r2))", new BigDecimal(36.0/32));
 	}
 	
-	private static boolean test(String expression, BigDecimal expectedValue) {
+	private static boolean test(String expression, String x, BigDecimal expectedValue) {
 		BigDecimal result = null;
 		
 		System.out.printf("Testing '" + expression + "'\t");
 		
 		try {
-			result = simplify(expression);
+			result = simplify(expression, x);
 		} catch (Exception e) {
 			System.out.println("FAIL: Test raised exception " + e + "\n");
 			return false;
@@ -145,12 +154,16 @@ public class Expression {
 		return true;
 	}
 	
+	private static boolean test(String expression, BigDecimal expectedValue) {
+		return test(expression, null, expectedValue);
+	}
+	
 	/**
 	 * Cleans expression of problematic cases, like whitespace and double negatives.
 	 * @param expression
 	 * @return
 	 */
-	public static String cleanup(String expression) {
+	public static String cleanup(String expression, String x) {
 		Matcher matcher;
 		
 		/* Strip all whitespace */
@@ -175,6 +188,22 @@ public class Expression {
 		/* ')(' implies multiplication */
 		expression = expression.replaceAll("\\)\\(", ")*(");
 		
+		/* Replace pi, e */
+		expression = expression.replaceAll("(?i)pi", Double.toString(Math.PI));
+		expression = expression.replaceAll("(?i)e", Double.toString(Math.E));
+		
+		/* Replace x */
+		Pattern x_pat = Pattern.compile("(?i)x");
+		matcher = x_pat.matcher(expression);
+		if (matcher.find()) {
+			if (x != null) {
+				expression = matcher.replaceAll(x);
+			}
+			else {
+				throw new NumberFormatException("X not provided");
+			}
+		}
+		
 		return expression;
 	}
 	
@@ -186,12 +215,12 @@ public class Expression {
 	 * @param expression Expression to simplify
 	 * @return Simplification
 	 */
-	public static BigDecimal simplify(String expression) {
+	public static BigDecimal simplify(String expression, String x) {
 		if (DEBUG) {
 			System.err.println("Expression: " + expression);
 		}
 		
-		expression = cleanup(expression);
+		expression = cleanup(expression, x);
 		
 		expression = handle_parens(expression);
 		
@@ -213,6 +242,10 @@ public class Expression {
 		
 		/* Only reached on invalid input */
 		throw new NumberFormatException("No operation found in " + expression);
+	}
+	
+	public static BigDecimal simplify(String expression) {
+		return simplify(expression, null);
 	}
 
 	/**
