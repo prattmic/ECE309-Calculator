@@ -5,24 +5,21 @@ import javax.swing.*;
 
 import java.math.BigDecimal;
 
-/* ECE309 Calculator Project
- * Michael Pratt
- * Dennis Penn
- * David Wilson
- */
-
 @SuppressWarnings("serial")
 public class Accumulator extends JApplet implements ActionListener, KeyListener ,Runnable{
-	private static final double comparisonPrecision = 0.01;
 	private JFrame	window     = new JFrame("ECE309 Calculator - Accumulator Mode");
 	private JPanel	northPanel	= new JPanel();
 	private JPanel	centerPanel	= new JPanel();
 	private JPanel	southPanel	= new JPanel();
 	private JButton	evalButton	= new JButton("Evaluate");
 	private JButton clearButton	= new JButton("Clear Sum");
+	private JButton recallButton = new JButton("Recall");
+	private JButton xButton     = new JButton("Set x");
+	private JTextArea xTextArea = new JTextArea("Enter x value");
 	private JTextArea inputTextArea  = new JTextArea();
 	private JTextArea answerTextArea = new JTextArea("Sum: 0" + "\n" );
 	private	JTextArea logTextArea	= new JTextArea();
+	private JScrollPane xScrollPane = new JScrollPane(xTextArea);
 	private JScrollPane inputScrollPane  = new JScrollPane(inputTextArea);
 	private JScrollPane logScrollPane = new JScrollPane(logTextArea);
 	private JScrollPane answerScrollPane = new JScrollPane(answerTextArea);
@@ -42,9 +39,10 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 	private BigDecimal accumSum=BigDecimal.valueOf(0);
 	private String prevSum="0";
 	private String toEval;
+	private String recallVal = null;
+	private String x = null;
 	private JLabel reminderLabel = new JLabel("Only +, -, *, and / are allowed. Operands can only be numbers.");
 	public Accumulator() {
-		// TODO Auto-generated constructor stub
 		window.setJMenuBar(mb);
 		pane.setLayout(new GridLayout(3,1));
 		mb.add(menuMode);
@@ -59,7 +57,13 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 		northPanel.add(inputScrollPane);
 
 		//Buttons area formatting
-		centerPanel.setLayout(new GridLayout(3,1));
+		centerPanel.setLayout(new GridLayout(6,2));
+		//xTextArea.addKeyListener(this);
+		centerPanel.add(xScrollPane);
+		centerPanel.add(xButton);
+		xButton.addActionListener(this);
+		centerPanel.add(recallButton);
+		recallButton.addActionListener(this);
 		centerPanel.add(evalButton);
 		evalButton.addActionListener(this);
 		clearButton.addActionListener(this);
@@ -101,13 +105,11 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		System.out.println("ECE309 Calculator Project\nTeam 9\nMichael Pratt\nDennis Penn\nDavid Wilson");
 		new Accumulator();
 	}
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -115,7 +117,6 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 	@Override
 
 	public void actionPerformed(ActionEvent evt) {
-		// TODO Auto-generated method stub
 		inputTextArea.requestFocusInWindow();
 		toEval = inputTextArea.getText().trim();
 		if (evt.getSource() == evalButton){
@@ -152,16 +153,34 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 				//for comparator, sum unneeded so far
 			}
 		}
+		if (evt.getSource() == xButton) {
+			try
+			{
+				Double.parseDouble(xTextArea.getText());
+			}
+			catch(Exception e)
+			{
+				answerTextArea.setText("Must enter a value for x.");
+				return;
+			}
+			x = xTextArea.getText();
+			answerTextArea.setText("The value of x has been set to: " + x);
+			
+		}
+		if (evt.getSource() == recallButton) {
+			if(recallVal == null) {
+				answerTextArea.setText("Must evaluate a expression first.");
+			}
+			inputTextArea.setText(recallVal);
+		}
 	}
 
 	@Override
 	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
 	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		// TODO Auto-generated method stub
 		if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 			inputTextArea.requestFocusInWindow();
 			toEval = inputTextArea.getText().trim();
@@ -172,10 +191,10 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
 	}
 
 	public void doEvaluation(){
+		recallVal = toEval;
 		if(accumRadio.isSelected()){
 			//do accumulator mode evaluations 
 			try {accumSum = Expression.simplify(toEval).add(accumSum);}
@@ -194,7 +213,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 		}
 		else if(calcRadio.isSelected()){
 			//do calculator mode evaluations
-			try {accumSum = Expression.simplify(toEval);}
+			try {accumSum = Expression.simplify(toEval,x);}
 			catch(NumberFormatException nfe){
 				answerTextArea.setForeground(Color.RED);
 				answerTextArea.setText("Exception Encounted: " + nfe 
@@ -223,7 +242,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 			String left =((String) toEval).substring(0,equalOffset).trim();
 			String right = ((String) toEval).substring(equalOffset+1).trim();
 			try{
-				if(Math.abs(Expression.simplify(left).subtract(Expression.simplify(right)).doubleValue()) < comparisonPrecision){
+				if(Expression.simplify(left).equals(Expression.simplify(right))){
 					answerTextArea.setText(left+ " = " + right + ": Correct!");
 					logTextArea.append(left+ " = " + right + ": Correct!"+"\n");
 				}
@@ -243,6 +262,5 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 		logTextArea.setCaretPosition(logTextArea.getDocument().getLength());
 		inputTextArea.setCaretPosition(0);
 	}
-
-
+	
 }
