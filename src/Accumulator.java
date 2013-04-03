@@ -5,8 +5,15 @@ import javax.swing.*;
 
 import java.math.BigDecimal;
 
+/* ECE309 Calculator Project
+ * Michael Pratt
+ * Dennis Penn
+ * David Wilson
+ */
+
 @SuppressWarnings("serial")
 public class Accumulator extends JApplet implements ActionListener, KeyListener ,Runnable{
+	private static final double comparisonPrecision = 0.01;
 	private JFrame	window     = new JFrame("ECE309 Calculator - Accumulator Mode");
 	private JPanel	northPanel	= new JPanel();
 	private JPanel	centerPanel	= new JPanel();
@@ -105,6 +112,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		System.out.println("ECE309 Calculator Project\nTeam 9\nMichael Pratt\nDennis Penn\nDavid Wilson");
 		new Accumulator();
 	}
 
@@ -197,7 +205,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 		recallVal = toEval;
 		if(accumRadio.isSelected()){
 			//do accumulator mode evaluations 
-			try {accumSum = Expression.simplify(toEval).add(accumSum);}
+			try {accumSum = Expression.simplify(toEval, x).add(accumSum);}
 			catch(NumberFormatException nfe){
 				answerTextArea.setForeground(Color.RED);
 				answerTextArea.setText("Exception Encounted: " + nfe 
@@ -242,7 +250,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 			String left =((String) toEval).substring(0,equalOffset).trim();
 			String right = ((String) toEval).substring(equalOffset+1).trim();
 			try{
-				if(Expression.simplify(left).equals(Expression.simplify(right))){
+				if(Math.abs(Expression.simplify(left, x).subtract(Expression.simplify(right, x)).doubleValue()) < comparisonPrecision){
 					answerTextArea.setText(left+ " = " + right + ": Correct!");
 					logTextArea.append(left+ " = " + right + ": Correct!"+"\n");
 				}
