@@ -12,7 +12,7 @@ import java.math.BigDecimal;
  */
 
 @SuppressWarnings("serial")
-public class Accumulator extends JApplet implements ActionListener, KeyListener ,Runnable{
+public class Accumulator extends JApplet implements ActionListener, KeyListener ,Runnable, FocusListener{
 	private static final double comparisonPrecision = 0.01;
 	private JFrame	window     = new JFrame("ECE309 Calculator - Accumulator Mode");
 	private JPanel	northPanel	= new JPanel();
@@ -48,7 +48,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 	private String toEval;
 	private String recallVal = null;
 	private String x = null;
-	private JLabel reminderLabel = new JLabel("Only +, -, *, and / are allowed. Operands can only be numbers.");
+	private JLabel reminderLabel = new JLabel("Enter a expression");
 	public Accumulator() {
 		window.setJMenuBar(mb);
 		pane.setLayout(new GridLayout(3,1));
@@ -65,7 +65,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 
 		//Buttons area formatting
 		centerPanel.setLayout(new GridLayout(6,2));
-		//xTextArea.addKeyListener(this);
+		xTextArea.addFocusListener(this);
 		centerPanel.add(xScrollPane);
 		centerPanel.add(xButton);
 		xButton.addActionListener(this);
@@ -269,6 +269,23 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 		}
 		logTextArea.setCaretPosition(logTextArea.getDocument().getLength());
 		inputTextArea.setCaretPosition(0);
+	}
+
+	@Override
+	public void focusGained(FocusEvent fe) {
+		try
+		{
+			Double.parseDouble(xTextArea.getText());
+		}
+		catch(Exception e)
+		{
+			xTextArea.setText("");
+		}
+	}
+
+	@Override
+	public void focusLost(FocusEvent fe) {
+		
 	}
 	
 }
