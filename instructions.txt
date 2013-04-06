@@ -2,9 +2,7 @@ This project consists of two classes Expression and Accumulator.  The Expression
 
 Both classes must be built in order to run the project.  You simply need to run the Accumulator class.  Running the Expression class will simply run through a set of test cases.
 
-Note that the Expression class already implements the majority of Part 2 functionality (parentheses, powers, complex expressions).  This will not affect its ability to parse simple expressions.
-
-ECE 309 Calculator Part 1
+ECE 309 Calculator Part 2
 Team 9
 Michael Pratt
 Dennis Penn
