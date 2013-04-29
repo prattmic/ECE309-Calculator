@@ -61,7 +61,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 	private JLabel xIncLabel = new JLabel("OR in increments of");
 	private JLabel xMaxLabel = new JLabel("to X =");
 	private JLabel xMinLabel = new JLabel("for X =");
-	private boolean maxMode=true, incMode=false;
+	private boolean maxMode=false, incMode=false;
 	public Accumulator() {
 		window.setJMenuBar(mb);
 		pane.setLayout(new GridLayout(3,1));
@@ -88,7 +88,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 		xPanel.add(xMaxScrollPane);
 		xPanel.add(xIncLabel);
 		xPanel.add(xIncScrollPane);
-		
+
 		centerPanel.add(xPanel);
 		centerPanel.add(xButton);
 		xButton.addActionListener(this);
@@ -152,8 +152,13 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 		toEval = inputTextArea.getText().trim();
 		if (evt.getSource() == evalButton){
 			doEvaluation();
-			doGraphing();
-		}
+			if((maxMode == false) && (incMode==false)){
+			//notta, neither mode is possible
+			}
+			else{
+				doGraphing();
+			}
+			}
 		//GUI may or may not change as these are selected.
 		if(evt.getSource() == accumItem || evt.getSource() == accumRadio){
 			window.setTitle("ECE309 Calculator - Accumulator Mode");
@@ -197,40 +202,40 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 			}
 			x = xTextArea.getText();
 			answerTextArea.setText("The value of x has been set to: " + x);
-			
-			
+
+
 			if((xMaxTextArea.getText().trim().equals("") == false)&&(xIncTextArea.getText().trim().equals("") == false)){
-			maxMode = true;
-			incMode = false;
-			String noteString = "NOTE: If the maximum X value and X increment are both set, then the program will automatically " +
-					"use the maximum x value for graphing." + "\n" + "Clear the maximum x value and hit the set button if you wish to graph by increments.";
-			String answerTxt = answerTextArea.getText();
-			answerTextArea.setText(answerTxt + "\n"+ noteString + "\n");
+				maxMode = true;
+				incMode = false;
+				String noteString = "NOTE: If the maximum X value and X increment are both set, then the program will automatically " +
+						"use the maximum x value for graphing." + "\n" + "Clear the maximum x value and hit the set button if you wish to graph by increments.";
+				String answerTxt = answerTextArea.getText();
+				answerTextArea.setText(answerTxt + "\n"+ noteString + "\n");
 			}
-			
+
 			if(xMaxTextArea.getText().trim().equals("") == false){
-			xMax = xMaxTextArea.getText();
-			//check xmax is double
-			try
-			{
-				Double.parseDouble(xMax);
-			}
-			catch(Exception e)
-			{
-				answerTextArea.setText("The maximum value for x is invalid");
-				return;
-			}
-			//check to make sure the max is greater than our initial value
-			if(Double.valueOf(x) >= Double.valueOf(xMax)){
-				answerTextArea.setText("The maximum X value seems to be less or equal to the initial value. \n " +
-						"Please increase it to be larger than the initial X.");
-				return;
-			}
-			
-			//
-			String answerTxt = answerTextArea.getText();
-			answerTextArea.setText(answerTxt + "\n" + "The xMax value has been set to: "+xMax);
-			
+				xMax = xMaxTextArea.getText();
+				//check xmax is double
+				try
+				{
+					Double.parseDouble(xMax);
+				}
+				catch(Exception e)
+				{
+					answerTextArea.setText("The maximum value for x is invalid");
+					return;
+				}
+				//check to make sure the max is greater than our initial value
+				if(Double.valueOf(x) >= Double.valueOf(xMax)){
+					answerTextArea.setText("The maximum X value seems to be less or equal to the initial value. \n " +
+							"Please increase it to be larger than the initial X.");
+					return;
+				}
+
+				//
+				String answerTxt = answerTextArea.getText();
+				answerTextArea.setText(answerTxt + "\n" + "The xMax value has been set to: "+xMax);
+
 			}
 			if(xIncTextArea.getText().trim().equals("") == false){
 				xInc = xIncTextArea.getText();
@@ -253,6 +258,10 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 			}
 			if((xMaxTextArea.getText().trim().equals("") == false)&&(xIncTextArea.getText().trim().equals("") == true)){
 				maxMode = true;
+				incMode = false;
+			}
+			if((xInc.trim().equals("") == true)&&(xMax.trim().equals("") == true)){
+				maxMode = false;
 				incMode = false;
 			}
 		}
@@ -352,72 +361,53 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 		inputTextArea.setCaretPosition(0);
 	}
 	public void doGraphing(){
-		
-		//we'll determine our x scale and y scales 
-		double[] yScaleValues;
-		double[] xScaleValues = new double[12];//we'll make our scale a little bigger so we can include ticks after the values
+		double[] actualXValues;
 		double[] actualXValuesMax = new double[11];//
-		double[] actualXValuesInc;//we dunno, but min is 5 and max is 25...
+		double[] actualXValuesInc = new double[11];//max is 20...
 		double[] actualYValues; //whatever the length of our x is will be the number for y values
 		if(maxMode == true){
-		//get our x values for our x axis, we'll do roughly 10 increments, not exactly
-		double startValue = (Double.valueOf(x)-1);
-		int roundedStartValue = (int) Math.round(startValue);
-		double maxValue = (Double.valueOf(xMax)) +1;
-		int roundedMaxValue = (int) maxValue;
-		double range = roundedMaxValue - roundedStartValue;
-		double increment = range/10;
-		xScaleValues[0] = roundedStartValue;
-		int currentXMark;
-		currentXMark=roundedStartValue;
-		xScaleValues[0] = roundedStartValue;
-		int i;
-		System.out.println(xScaleValues[0]);
-		for(i=1;i<=11;i++){
-			xScaleValues[i] = (int)((xScaleValues[i-1])+(increment));
-			System.out.println("scale x" +xScaleValues[i]);
-		}
-		double realRange;
-		realRange = Double.valueOf(xMax) - Double.valueOf(x);
-		double realInc = (realRange / 10);
-		actualXValuesMax[0] = Double.valueOf(x);
-		for(i=1;i<=10;i++){
-			actualXValuesMax[i] = (realInc)+actualXValuesMax[i-1];
-			System.out.println("act x"+actualXValuesMax[i]);
-		}
-		//yay we got our xscale values (for max mode) and our actual x values which need to be evaluated for Y...
-		actualYValues = new double[actualXValuesMax.length];
-		for(i=0;i<actualXValuesMax.length;i++){
-		BigDecimal y = Expression.simplify(toEval,String.valueOf(actualXValuesMax[i]));
-		actualYValues[i]= y.doubleValue();
-		System.out.println("act y" +actualYValues[i]);
+			//get our x values
+			int i;
+			double realRange;
+			realRange = Double.valueOf(xMax) - Double.valueOf(x);
+			double realInc = (realRange / 10);
+			actualXValuesMax[0] = Double.valueOf(x);
+			for(i=1;i<=10;i++){
+				actualXValuesMax[i] = (realInc)+actualXValuesMax[i-1];
 			}
-		
-		//got y values, need to get y scale values
-		double smallY=0, bigY=0, currentY=0;
-		for(i=0;i<actualYValues.length;i++){
-			currentY = actualYValues[i];
-			if(currentY < smallY){smallY = currentY;}
-			if(currentY > bigY){bigY = currentY;}
-		}
-		yScaleValues = Graphing.yScaleValues(smallY, bigY);
-	
-		for(i=0;i<yScaleValues.length;i++){
-		System.out.println("scale y"+yScaleValues[i]);
-		}
-		//all right! we got both scales and arrays of actual values
+			//got our x values
+			actualYValues = new double[actualXValuesMax.length];
+			for(i=0;i<actualXValuesMax.length;i++){
+				BigDecimal y = Expression.simplify(toEval,String.valueOf(actualXValuesMax[i]));
+				actualYValues[i]= y.doubleValue();
+			}
+			//got our Y values
+			actualXValues = actualXValuesMax;
 		}
 		else{
-		//we're in the increment type mode	
-		//for this mode we'll make the scale and actual x values the same, as the person probably wants to know those specfic values
-		int numberOfXValues=0;
-		double startValue = Double.valueOf(x);
-		double Xincrement = Double.valueOf(xInc);
-		//for()
+			//we're in the increment type mode	
+			int numberOfXValues=0;
+			double startValue = Double.valueOf(x);
+			double xIncrement = Double.valueOf(xInc);
+			actualXValuesInc[0]=startValue;
+			for(int i=1;i<10;i++){
+				actualXValuesInc[i]= (actualXValuesInc[i-1]+xIncrement);
+			}
+			//got our x values
+			actualYValues = new double[actualXValuesInc.length];
+			for(int i=0;i<actualXValuesInc.length;i++){
+				BigDecimal y = Expression.simplify(toEval,String.valueOf(actualXValuesInc[i]));
+				actualYValues[i]= y.doubleValue();
+			}
+			//we have our actual y values
+		actualXValues = actualXValuesInc;
 		}
+		//GOT ALL VALUES NOW FOR X AND Y
+		//let the grapher do the rest!
+		new Grapher(actualXValues, actualYValues, toEval,this);
+
+		
+		
 		
 	}
-
-	
-	
 }
