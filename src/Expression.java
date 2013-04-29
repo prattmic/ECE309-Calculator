@@ -169,6 +169,18 @@ public class Expression {
 		/* Strip all whitespace */
 		expression = expression.replaceAll("\\s", "");
 		
+		/* Replace x */
+		Pattern x_pat = Pattern.compile("(?i)x");
+		matcher = x_pat.matcher(expression);
+		if (matcher.find()) {
+			if (x != null) {
+				expression = matcher.replaceAll(x);
+			}
+			else {
+				throw new NumberFormatException("X not provided");
+			}
+		}
+		
 		/* Matches operator or beginning of line followed by double negative. 
 		 * Group 2 is the actual double negatives. */
 		Pattern double_neg = Pattern.compile("(^|[\\+\\-\\*/])((\\-\\-)+)");
@@ -191,18 +203,6 @@ public class Expression {
 		/* Replace pi, e */
 		expression = expression.replaceAll("(?i)pi", Double.toString(Math.PI));
 		expression = expression.replaceAll("(?i)e", Double.toString(Math.E));
-		
-		/* Replace x */
-		Pattern x_pat = Pattern.compile("(?i)x");
-		matcher = x_pat.matcher(expression);
-		if (matcher.find()) {
-			if (x != null) {
-				expression = matcher.replaceAll(x);
-			}
-			else {
-				throw new NumberFormatException("X not provided");
-			}
-		}
 		
 		return expression;
 	}

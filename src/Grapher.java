@@ -44,8 +44,8 @@ public class Grapher extends JPanel {
 		}
 		//yaxis
 		for(i=0;i<yScaleArray.length;i++){
-		g.drawLine((ScreenWidth/2)-3,(yTickInc*i),(ScreenWidth/2)+3,(yTickInc*i));
-		g.drawChars(String.valueOf((int) Math.round(yScaleArray[i])).toCharArray(), 0, String.valueOf((int) Math.round(yScaleArray[i])).length(), (ScreenWidth/2)+5, (ScreenHeight)-(yTickInc*i)-yTickInc);
+		g.drawLine((ScreenWidth/2)-3,(yTickInc*(i-1)),(ScreenWidth/2)+3,(yTickInc*(i-1)));
+		g.drawChars(String.valueOf((int) Math.round(yScaleArray[i])).toCharArray(), 0, String.valueOf((int) Math.round(yScaleArray[i])).length(), (ScreenWidth/2)+5, (ScreenHeight)-(yTickInc*(i-1))-yTickInc);
 		}
 		//draw our equation!
 		double bigX=0, currentX=0;
@@ -57,8 +57,8 @@ public class Grapher extends JPanel {
 		double yUnit = ScreenHeight / bigY;
 		double xUnit = ScreenWidth / bigX;
 		for(i=0;i<aYValues.length-2;i++){
-			//g.drawLine((int)( xUnit*aXValues[i]),(int)(ScreenHeight - (aYValues[i]*yUnit)),(int) (xUnit *aXValues[i+1]),(int) (ScreenHeight - (aYValues[i+1]*yUnit)));
-			g.drawLine((int) ((xScaleArray[i])*xUnit),(int)(ScreenHeight - (yScaleArray[i]*yUnit)-yTickInc),(int) (xScaleArray[i+1]*xUnit),(int)(ScreenHeight - (yScaleArray[i+1]*yUnit) -yTickInc));
+			g.drawLine((int)( xUnit*aXValues[i]),(int)(ScreenHeight - (aYValues[i]*yUnit)),(int) (xUnit *aXValues[i+1]),(int) (ScreenHeight - (aYValues[i+1]*yUnit)));
+			//g.drawLine((int) ((xScaleArray[i])*xUnit),(int)(ScreenHeight - (yScaleArray[i]*yUnit)-yTickInc),(int) (xScaleArray[i+1]*xUnit),(int)(ScreenHeight - (yScaleArray[i+1]*yUnit) -yTickInc));
 		}
 		
 		

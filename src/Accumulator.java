@@ -390,7 +390,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 			double startValue = Double.valueOf(x);
 			double xIncrement = Double.valueOf(xInc);
 			actualXValuesInc[0]=startValue;
-			for(int i=1;i<10;i++){
+			for(int i=1;i<actualXValuesInc.length;i++){
 				actualXValuesInc[i]= (actualXValuesInc[i-1]+xIncrement);
 			}
 			//got our x values
