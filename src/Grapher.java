@@ -1,13 +1,20 @@
 import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.lang.reflect.Array;
 
 import javax.swing.*;
 
-public class Grapher extends JPanel {
+public class Grapher extends JPanel implements MouseListener {
 	private JFrame window = new JFrame("Graph");
 	double[] aYValues;
 	double[] aXValues;
 	private JPanel mainPanel= new JPanel();
+	double xUnit;
+	double chosenX=1.1;
+	double chosenY=1.1;
+	int y_m;
+	int x_m;
 	
 	public static void main(String args[]) {	
 		
@@ -65,6 +72,9 @@ public class Grapher extends JPanel {
 			g.drawLine((int)( xUnit*(aXValues[i]-smallX)),(int)(ScreenHeight - ((aYValues[i]-smallY)*yUnit)),(int) (xUnit *(aXValues[i+1]-smallX)),(int) (ScreenHeight - ((aYValues[i+1]-smallY)*yUnit)));
 			//g.drawLine((int) ((xScaleArray[i])*xUnit),(int)(ScreenHeight - (yScaleArray[i]*yUnit)-yTickInc),(int) (xScaleArray[i+1]*xUnit),(int)(ScreenHeight - (yScaleArray[i+1]*yUnit) -yTickInc));
 		}
+		if(chosenX != 1.1){
+			g.drawString("X =" + chosenX + "\n" + "Y =" + chosenY, x_m, y_m);
+		}
 		
 		
 	}
@@ -77,6 +87,7 @@ public class Grapher extends JPanel {
 		aYValues = yvalues;
 		aXValues = new double[xvalues.length];
 		aXValues = xvalues;
+		window.addMouseListener(this);
 		//set some default size
 		window.setSize(500, 500);
 		window.setVisible(true);
@@ -185,5 +196,52 @@ yScaleArray = new double[numberOfYscaleValues];
 public double[] xScaleHolder(double[] xscalehold){
 		return xscalehold;
 	}
+
+@Override
+public void mouseClicked(MouseEvent arg0) {
+	
+}
+
+@Override
+public void mouseEntered(MouseEvent arg0) {
+	
+}
+
+@Override
+public void mouseExited(MouseEvent arg0) {
+	
+}
+
+@Override
+public void mousePressed(MouseEvent arg0) {
+	x_m = arg0.getX();
+	y_m = arg0.getY();
+	int x = (int) Math.round(arg0.getX()/xUnit);
+	int length = aYValues.length;
+	length = length - 1;
+	double diff=0;
+	diff = Math.abs(x - aXValues[0]);
+	double currentDiff;
+	int chosenIndex=0;
+	for(int i=1;i<=length;i++){
+	currentDiff = Math.abs(aXValues[i]-x);
+	if(currentDiff < diff){
+		diff = currentDiff;
+	chosenIndex = i;
+	}
+	}
+	System.out.println("values: "+ "\n"+aXValues[chosenIndex]+ " " + aYValues[chosenIndex]);
+	chosenY = aYValues[chosenIndex];
+	chosenX = aXValues[chosenIndex];
+	
+	this.repaint();
+}
+
+@Override
+public void mouseReleased(MouseEvent arg0) {
+	chosenX = 1.1;
+	chosenY = 1.1;
+	this.repaint();
+}
 
 }

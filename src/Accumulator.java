@@ -156,7 +156,12 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 			//notta, neither mode is possible
 			}
 			else{
+				try{
 				doGraphing();
+				}
+				catch(NumberFormatException e){
+					
+				}
 			}
 			}
 		//GUI may or may not change as these are selected.
