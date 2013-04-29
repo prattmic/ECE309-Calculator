@@ -26,6 +26,15 @@ public class Grapher extends JPanel {
 			if(currentY < smallY){smallY = currentY;}
 			if(currentY > bigY){bigY = currentY;}
 		}
+		double smallX=0, bigX=0, currentX=0;
+		for(i=0;i<aXValues.length;i++){
+			currentX = aXValues[i];
+			if(currentX < smallX){smallX = currentX;}
+			if(currentX > bigX){bigX = currentX;}
+		}
+		
+		double yUnit = ScreenHeight / (bigY-smallY);
+		double xUnit = ScreenWidth / (bigX-smallX);
 		double yScaleArray[] = yScaleValues(smallY,bigY); 
 		//we have the YScale!
 		yTickInc = ScreenHeight / yScaleArray.length; 
@@ -39,25 +48,21 @@ public class Grapher extends JPanel {
 		//now draw the 'ticks' and values for the scale
 		//xaxis
 		for(i=0;i<xScaleArray.length;i++){
-		g.drawLine((xTickInc*i), (ScreenHeight/2)-3, (xTickInc*i), (ScreenHeight/2)+3);
-		g.drawChars(String.valueOf((int) Math.round(xScaleArray[i])).toCharArray(), 0, String.valueOf((int) Math.round(xScaleArray[i])).length(), (xTickInc*i), (ScreenHeight/2)+14);
+		//g.drawLine((xTickInc*i), (ScreenHeight/2)-3, (xTickInc*i), (ScreenHeight/2)+3);
+		//g.drawChars(String.valueOf((int) Math.round(xScaleArray[i])).toCharArray(), 0, String.valueOf((int) Math.round(xScaleArray[i])).length(), (xTickInc*i), (ScreenHeight/2)+14);
+		g.drawLine((int)(xUnit*(xScaleArray[i]-smallX)), (ScreenHeight/2)-3, (int)(xUnit*(xScaleArray[i]-smallX)), (ScreenHeight/2)+3);
+		g.drawChars(String.valueOf((int) Math.round(xScaleArray[i])).toCharArray(), 0, String.valueOf((int) Math.round(xScaleArray[i])).length(), (int)(xUnit*(xScaleArray[i]-smallX)), (ScreenHeight/2)+14);
 		}
 		//yaxis
 		for(i=0;i<yScaleArray.length;i++){
-		g.drawLine((ScreenWidth/2)-3,(yTickInc*(i-1)),(ScreenWidth/2)+3,(yTickInc*(i-1)));
-		g.drawChars(String.valueOf((int) Math.round(yScaleArray[i])).toCharArray(), 0, String.valueOf((int) Math.round(yScaleArray[i])).length(), (ScreenWidth/2)+5, (ScreenHeight)-(yTickInc*(i-1))-yTickInc);
+		//g.drawLine((ScreenWidth/2)-3,(yTickInc*(i-1)),(ScreenWidth/2)+3,(yTickInc*(i-1)));
+		//g.drawChars(String.valueOf((int) Math.round(yScaleArray[i])).toCharArray(), 0, String.valueOf((int) Math.round(yScaleArray[i])).length(), (ScreenWidth/2)+5, (ScreenHeight)-(yTickInc*(i-1))-yTickInc);
+		g.drawLine((ScreenWidth/2)-3,(int)(yUnit*(yScaleArray[i]-smallY)),(ScreenWidth/2)+3,(int)(yUnit*(yScaleArray[i]-smallY)));
+		g.drawChars(String.valueOf((int) Math.round(yScaleArray[i])).toCharArray(), 0, String.valueOf((int) Math.round(yScaleArray[i])).length(), (ScreenWidth/2)+5, (int)((ScreenHeight)-(yUnit*(yScaleArray[i]-smallY))));
 		}
 		//draw our equation!
-		double bigX=0, currentX=0;
-		for(i=0;i<aXValues.length;i++){
-			currentX = aXValues[i];
-			if(currentX > bigX){bigX = currentX;}
-		}
-		
-		double yUnit = ScreenHeight / bigY;
-		double xUnit = ScreenWidth / bigX;
-		for(i=0;i<aYValues.length-2;i++){
-			g.drawLine((int)( xUnit*aXValues[i]),(int)(ScreenHeight - (aYValues[i]*yUnit)),(int) (xUnit *aXValues[i+1]),(int) (ScreenHeight - (aYValues[i+1]*yUnit)));
+		for(i=0;i<aYValues.length-1;i++){
+			g.drawLine((int)( xUnit*(aXValues[i]-smallX)),(int)(ScreenHeight - ((aYValues[i]-smallY)*yUnit)),(int) (xUnit *(aXValues[i+1]-smallX)),(int) (ScreenHeight - ((aYValues[i+1]-smallY)*yUnit)));
 			//g.drawLine((int) ((xScaleArray[i])*xUnit),(int)(ScreenHeight - (yScaleArray[i]*yUnit)-yTickInc),(int) (xScaleArray[i+1]*xUnit),(int)(ScreenHeight - (yScaleArray[i+1]*yUnit) -yTickInc));
 		}
 		
