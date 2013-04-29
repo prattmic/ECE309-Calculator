@@ -4,6 +4,7 @@ import java.awt.event.*;
 import javax.swing.*;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
 /* ECE309 Calculator Project
  * Michael Pratt
@@ -12,21 +13,26 @@ import java.math.BigDecimal;
  */
 
 @SuppressWarnings("serial")
-public class Accumulator extends JApplet implements ActionListener, KeyListener ,Runnable, FocusListener{
+public class Accumulator extends JApplet implements ActionListener, KeyListener ,Runnable{
 	private static final double comparisonPrecision = 0.01;
 	private JFrame	window     = new JFrame("ECE309 Calculator - Accumulator Mode");
 	private JPanel	northPanel	= new JPanel();
 	private JPanel	centerPanel	= new JPanel();
 	private JPanel	southPanel	= new JPanel();
+	private JPanel	xPanel	= new JPanel();
 	private JButton	evalButton	= new JButton("Evaluate");
 	private JButton clearButton	= new JButton("Clear Sum");
 	private JButton recallButton = new JButton("Recall");
-	private JButton xButton     = new JButton("Set x");
-	private JTextArea xTextArea = new JTextArea("Enter x value");
+	private JButton xButton     = new JButton("Set x (and any parameters)");
+	private JTextArea xTextArea = new JTextArea();
+	private JTextArea xIncTextArea = new JTextArea();
+	private JTextArea xMaxTextArea = new JTextArea();
 	private JTextArea inputTextArea  = new JTextArea();
 	private JTextArea answerTextArea = new JTextArea("Sum: 0" + "\n" );
 	private	JTextArea logTextArea	= new JTextArea();
 	private JScrollPane xScrollPane = new JScrollPane(xTextArea);
+	private JScrollPane xIncScrollPane= new JScrollPane(xIncTextArea);
+	private JScrollPane xMaxScrollPane = new JScrollPane(xMaxTextArea);
 	private JScrollPane inputScrollPane  = new JScrollPane(inputTextArea);
 	private JScrollPane logScrollPane = new JScrollPane(logTextArea);
 	private JScrollPane answerScrollPane = new JScrollPane(answerTextArea);
@@ -48,7 +54,14 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 	private String toEval;
 	private String recallVal = null;
 	private String x = null;
-	private JLabel reminderLabel = new JLabel("Enter a expression");
+	private String xMin = null;
+	private String xMax = null;
+	private String xInc = null;
+	private JLabel reminderLabel = new JLabel("Enter an expression");
+	private JLabel xIncLabel = new JLabel("OR in increments of");
+	private JLabel xMaxLabel = new JLabel("to X =");
+	private JLabel xMinLabel = new JLabel("for X =");
+	private boolean maxMode=false, incMode=false;
 	public Accumulator() {
 		window.setJMenuBar(mb);
 		pane.setLayout(new GridLayout(3,1));
@@ -64,9 +77,19 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 		northPanel.add(inputScrollPane);
 
 		//Buttons area formatting
-		centerPanel.setLayout(new GridLayout(6,2));
-		xTextArea.addFocusListener(this);
-		centerPanel.add(xScrollPane);
+		centerPanel.setLayout(new GridLayout(7,2));
+		xPanel.setLayout(new GridLayout(1,6,0,0));
+		xMinLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+		xMaxLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+		xIncLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+		xPanel.add(xMinLabel);
+		xPanel.add(xScrollPane);
+		xPanel.add(xMaxLabel);
+		xPanel.add(xMaxScrollPane);
+		xPanel.add(xIncLabel);
+		xPanel.add(xIncScrollPane);
+
+		centerPanel.add(xPanel);
 		centerPanel.add(xButton);
 		xButton.addActionListener(this);
 		centerPanel.add(recallButton);
@@ -101,7 +124,7 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 		pane.add(northPanel);
 		pane.add(centerPanel);
 		pane.add(southPanel);
-		window.setSize(450,500);
+		window.setSize(580,550);
 
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		window.setVisible(true);
@@ -129,7 +152,13 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 		toEval = inputTextArea.getText().trim();
 		if (evt.getSource() == evalButton){
 			doEvaluation();
-		}
+			if((maxMode == false) && (incMode==false)){
+			//notta, neither mode is possible
+			}
+			else{
+				doGraphing();
+			}
+			}
 		//GUI may or may not change as these are selected.
 		if(evt.getSource() == accumItem || evt.getSource() == accumRadio){
 			window.setTitle("ECE309 Calculator - Accumulator Mode");
@@ -173,7 +202,68 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 			}
 			x = xTextArea.getText();
 			answerTextArea.setText("The value of x has been set to: " + x);
-			
+
+
+			if((xMaxTextArea.getText().trim().equals("") == false)&&(xIncTextArea.getText().trim().equals("") == false)){
+				maxMode = true;
+				incMode = false;
+				String noteString = "NOTE: If the maximum X value and X increment are both set, then the program will automatically " +
+						"use the maximum x value for graphing." + "\n" + "Clear the maximum x value and hit the set button if you wish to graph by increments.";
+				String answerTxt = answerTextArea.getText();
+				answerTextArea.setText(answerTxt + "\n"+ noteString + "\n");
+			}
+
+			if(xMaxTextArea.getText().trim().equals("") == false){
+				xMax = xMaxTextArea.getText();
+				//check xmax is double
+				try
+				{
+					Double.parseDouble(xMax);
+				}
+				catch(Exception e)
+				{
+					answerTextArea.setText("The maximum value for x is invalid");
+					return;
+				}
+				//check to make sure the max is greater than our initial value
+				if(Double.valueOf(x) >= Double.valueOf(xMax)){
+					answerTextArea.setText("The maximum X value seems to be less or equal to the initial value. \n " +
+							"Please increase it to be larger than the initial X.");
+					return;
+				}
+
+				//
+				String answerTxt = answerTextArea.getText();
+				answerTextArea.setText(answerTxt + "\n" + "The xMax value has been set to: "+xMax);
+
+			}
+			if(xIncTextArea.getText().trim().equals("") == false){
+				xInc = xIncTextArea.getText();
+				//
+				try
+				{
+					Double.parseDouble(xInc);
+				}
+				catch(Exception e)
+				{
+					answerTextArea.setText("The increment value for x is invalid");
+					return;
+				}
+				String answerTxt = answerTextArea.getText();
+				answerTextArea.setText(answerTxt + "\n" + "The xInc value has been set to: "+xInc);
+			}
+			if((xMaxTextArea.getText().trim().equals("") == true)&&(xIncTextArea.getText().trim().equals("") == false)){
+				incMode = true;
+				maxMode = false;
+			}
+			if((xMaxTextArea.getText().trim().equals("") == false)&&(xIncTextArea.getText().trim().equals("") == true)){
+				maxMode = true;
+				incMode = false;
+			}
+			if((xInc.trim().equals("") == true)&&(xMax.trim().equals("") == true)){
+				maxMode = false;
+				incMode = false;
+			}
 		}
 		if (evt.getSource() == recallButton) {
 			if(recallVal == null) {
@@ -270,22 +360,54 @@ public class Accumulator extends JApplet implements ActionListener, KeyListener 
 		logTextArea.setCaretPosition(logTextArea.getDocument().getLength());
 		inputTextArea.setCaretPosition(0);
 	}
-
-	@Override
-	public void focusGained(FocusEvent fe) {
-		try
-		{
-			Double.parseDouble(xTextArea.getText());
+	public void doGraphing(){
+		double[] actualXValues;
+		double[] actualXValuesMax = new double[11];//
+		double[] actualXValuesInc = new double[11];//max is 20...
+		double[] actualYValues; //whatever the length of our x is will be the number for y values
+		if(maxMode == true){
+			//get our x values
+			int i;
+			double realRange;
+			realRange = Double.valueOf(xMax) - Double.valueOf(x);
+			double realInc = (realRange / 10);
+			actualXValuesMax[0] = Double.valueOf(x);
+			for(i=1;i<=10;i++){
+				actualXValuesMax[i] = (realInc)+actualXValuesMax[i-1];
+			}
+			//got our x values
+			actualYValues = new double[actualXValuesMax.length];
+			for(i=0;i<actualXValuesMax.length;i++){
+				BigDecimal y = Expression.simplify(toEval,String.valueOf(actualXValuesMax[i]));
+				actualYValues[i]= y.doubleValue();
+			}
+			//got our Y values
+			actualXValues = actualXValuesMax;
 		}
-		catch(Exception e)
-		{
-			xTextArea.setText("");
+		else{
+			//we're in the increment type mode	
+			int numberOfXValues=0;
+			double startValue = Double.valueOf(x);
+			double xIncrement = Double.valueOf(xInc);
+			actualXValuesInc[0]=startValue;
+			for(int i=1;i<10;i++){
+				actualXValuesInc[i]= (actualXValuesInc[i-1]+xIncrement);
+			}
+			//got our x values
+			actualYValues = new double[actualXValuesInc.length];
+			for(int i=0;i<actualXValuesInc.length;i++){
+				BigDecimal y = Expression.simplify(toEval,String.valueOf(actualXValuesInc[i]));
+				actualYValues[i]= y.doubleValue();
+			}
+			//we have our actual y values
+		actualXValues = actualXValuesInc;
 		}
-	}
+		//GOT ALL VALUES NOW FOR X AND Y
+		//let the grapher do the rest!
+		new Grapher(actualXValues, actualYValues, toEval,this);
 
-	@Override
-	public void focusLost(FocusEvent fe) {
+		
+		
 		
 	}
-	
 }
